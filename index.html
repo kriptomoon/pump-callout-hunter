@@ -39,7 +39,7 @@
       <div class="field"><label for="minAge">Min. starost (min)</label><input id="minAge" type="number" min="0" value="0"></div>
       <div class="field"><label for="maxAge">Max. starost (min)</label><input id="maxAge" type="number" min="1" value="60"></div>
       <div class="field"><label for="minSol">Min. virtual SOL u krivulji</label><input id="minSol" type="number" min="0" step="0.1" value="0"></div>
-      <div class="field"><label for="minScore">Min. launch score</label><input id="minScore" type="number" min="0" max="100" value="0"></div>
+      <div class="field"><label for="minScore">Min. potpunost podataka</label><input id="minScore" type="number" min="0" max="100" value="0"></div>
     </div>
     <div class="field search"><label for="search">Pretraži naziv, ticker ili CA</label><input id="search" placeholder="npr. DOGE ili adresa tokena"></div>
     <div class="actions">
@@ -53,9 +53,9 @@
     <div class="feed" id="feed"><div class="empty">Čekam nove Pump.fun tokene…<br>Ostavi ovu stranicu otvorenu dok skenira.</div></div>
   </section>
   <section class="panel">
-    <div class="panelhead"><h2>ŠTO ZNAČI SCORE?</h2></div>
-    <p class="notice">Launch Score (0–100) je samo preliminarna heuristika iz podataka koje šalje događaj kreiranja, poput početne kupnje i virtualnog SOL-a u bonding curveu. <b>Ne provjerava</b> holder distribuciju, dev wallet, stvarnu likvidnost, volumen kroz vrijeme, rug rizik ni sigurnost ugovora. Nije signal za kupnju ni službena Pump.fun ocjena.</p>
-    <p class="notice warn">Besplatni feed prikazuje nova kreiranja, ne kontinuirane kupnje/prodaje. Vrijednosti koje nedostaju prikazuju se kao N/A, a ne procjenjuju se.</p>
+    <div class="panelhead"><h2>ŠTO ZNAČI POTPUNOST PODATAKA?</h2></div>
+    <p class="notice">Ocjena potpunosti podataka (0–100) pokazuje samo koliko osnovnih polja događaja kreiranja je dostupno: mint, naziv/ticker, metadata URI i virtualni SOL u bonding curveu. <b>To nije ocjena kvalitete tokena</b>, ne predviđa rast i nije signal za kupnju.</p>
+    <p class="notice warn">INITIAL BUY prikazuje količinu kupljenih tokena, a ne SOL. Virtual SOL i market cap prikazuju se zasebno. Besplatni feed prikazuje nova kreiranja, ne kontinuirane kupnje/prodaje. Nedostupna polja prikazuju se kao N/A.</p>
   </section>
   <div class="foot">PUMP CALLOUT HUNTER V1 · Bez wallet povezivanja · Bez trgovanja · Bez obećanja zarade</div>
 </div>
@@ -71,15 +71,15 @@
   const fmt=(v,d=2)=>v===null?"N/A":Number(v).toLocaleString("en-US",{maximumFractionDigits:d});
   function ageMin(t){return Math.max(0,(Date.now()-t)/60000)}
   function scoreOf(x){
-    // Transparent launch-only heuristic, not a market-quality or safety rating.
-    const buy=num(x.initialBuy), curve=num(x.vSolInBondingCurve), mc=num(x.marketCapSol);
-    let s=20;
-    if(buy!==null) s+=Math.min(30,Math.max(0,buy)*12);
-    if(curve!==null) s+=Math.min(30,Math.max(0,curve)*1.5);
-    if(mc!==null && mc>0) s+=10;
-    if(x.uri) s+=5;
-    return Math.max(0,Math.min(100,Math.round(s)));
+    // Data-completeness indicator only; deliberately not a token-quality score.
+    let s=0;
+    if(typeof x.mint==='string' && x.mint.length>20) s+=25;
+    if(typeof x.name==='string' && x.name.trim() && typeof x.symbol==='string' && x.symbol.trim()) s+=25;
+    if(typeof x.uri==='string' && x.uri.startsWith('http')) s+=25;
+    if(num(x.vSolInBondingCurve)!==null) s+=25;
+    return s;
   }
+  function fmtTokens(v){return v===null?'N/A':Number(v).toLocaleString('en-US',{maximumFractionDigits:0})+' tokens'}
   function setStatus(t,on=false){$("status").textContent=t;$("dot").classList.toggle("on",on)}
   function connect(){
     if(paused)return;
@@ -119,11 +119,11 @@
       return `<article class="token">
         <div class="tokenhead"><div><span class="tokenname">${name}</span><span class="symbol">$${sym}</span></div><span class="age">${fmt(age,1)} min</span></div>
         <div class="meta">
-          <div class="metric"><small>Initial buy</small><b>${fmt(num(x.initialBuy))} SOL</b></div>
+          <div class="metric"><small>Initial buy · tokeni</small><b>${fmtTokens(num(x.initialBuy))}</b></div>
           <div class="metric"><small>Virtual SOL</small><b>${fmt(num(x.vSolInBondingCurve))} SOL</b></div>
           <div class="metric"><small>Market cap</small><b>${fmt(num(x.marketCapSol))} SOL</b></div>
         </div>
-        <div class="scoreline"><span>Launch score · heuristika</span><b style="color:${sc>=70?'var(--green)':sc>=45?'var(--yellow)':'var(--muted)'}">${sc}/100</b></div>
+        <div class="scoreline"><span>Potpunost podataka · nije kvaliteta tokena</span><b style="color:${sc>=70?'var(--green)':sc>=45?'var(--yellow)':'var(--muted)'}">${sc}/100</b></div>
         <div class="bar"><i style="width:${sc}%"></i></div>
         <div class="ca">${mint}</div>
         <div class="tokenactions"><a class="open" href="https://pump.fun/coin/${encodeURIComponent(x.mint)}" target="_blank" rel="noopener">Otvori Pump.fun ↗</a><button class="copy" data-copy="${mint}">Kopiraj CA</button></div>

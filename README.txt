@@ -7,9 +7,9 @@ Sadržaj:
 - icon-192.png / icon-512.png: ikone
 
 VAŽNO:
-1) Ovo je V1 prototip. Koristi PumpPortal WebSocket subscribeNewToken.
+1) Ovo je V1 prototip · ispravak prikaza i ocjene podataka. Koristi PumpPortal WebSocket subscribeNewToken.
 2) Feed novih tokena je besplatan prema PumpPortal dokumentaciji. Trade stream nije uključen jer može zahtijevati API ključ, financirani wallet i naplatu.
-3) Launch Score je samo transparentna heuristika nad poljima događaja kreiranja. Ne provjerava holder distribuciju, dev wallet, rug rizik, stvarnu likvidnost ili kasniji volumen.
+3) Ocjena potpunosti podataka (0–100) mjeri samo prisutnost osnovnih polja događaja kreiranja; nije ocjena kvalitete tokena niti signal za kupnju. INITIAL BUY je količina tokena, ne SOL.
 4) Nema wallet povezivanja, privatnih ključeva, kupnje/prodaje ni automatskog objavljivanja.
 5) WebSocket radi samo dok je stranica otvorena i mreža dostupna. iOS može pauzirati pozadinske kartice.
 6) Za instalaciju na iPhone datoteke moraju biti hostane preko HTTPS-a. Najjednostavnije je GitHub Pages:
