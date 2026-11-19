@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="hr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#090d16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pump Hunter">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Pump Callout Hunter</title>
+  <style>
+    :root{color-scheme:dark;--bg:#090d16;--panel:#111827;--panel2:#172235;--line:#263449;--muted:#91a0b7;--text:#edf3ff;--green:#2bd69a;--red:#ff667d;--yellow:#f4c66a;--blue:#72a9ff}
+    *{box-sizing:border-box} body{margin:0;background:radial-gradient(ellipse at top,#14223a 0,#090d16 52%);color:var(--text);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:env(safe-area-inset-top) 14px calc(22px + env(safe-area-inset-bottom))}
+    .wrap{max-width:760px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between;padding:18px 2px 14px}.brand{font-weight:850;letter-spacing:.5px;font-size:17px}.brand span{color:var(--green)}.status{font-size:11px;color:var(--muted);display:flex;gap:7px;align-items:center}.dot{width:8px;height:8px;border-radius:50%;background:#667085}.dot.on{background:var(--green);box-shadow:0 0 12px #2bd69a88}.hero{background:linear-gradient(135deg,#17283e,#101827);border:1px solid var(--line);border-radius:19px;padding:17px;margin-bottom:12px}.eyebrow{font-size:10px;letter-spacing:1.5px;color:var(--muted);font-weight:700}.hero h1{font-size:25px;line-height:1.1;margin:8px 0}.hero p{margin:0;color:#b4c1d4;font-size:13px;line-height:1.45}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:12px 0}.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}.stat small{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px}.stat strong{display:block;font-size:23px;margin-top:5px;font-variant-numeric:tabular-nums}.panel{background:#101827;border:1px solid var(--line);border-radius:16px;padding:13px;margin:12px 0}.panelhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.panelhead h2{font-size:13px;margin:0;letter-spacing:.6px}.hint{color:var(--muted);font-size:11px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:9px}.field label{display:block;color:var(--muted);font-size:11px;margin:0 0 5px}.field input,.field select{width:100%;background:#0b1220;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:14px;outline:none}.search{margin-top:9px}.btn{border:1px solid var(--line);background:#1a2a40;color:var(--text);padding:10px 12px;border-radius:10px;font-weight:700;font-size:12px}.btn.primary{background:#123d35;border-color:#1d735b;color:#bfffe8}.btn:active{transform:scale(.98)}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.feed{display:flex;flex-direction:column;gap:9px}.token{background:linear-gradient(145deg,#141f30,#101827);border:1px solid var(--line);border-radius:15px;padding:13px}.tokenhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.tokenname{font-weight:800;font-size:16px;word-break:break-word}.symbol{color:var(--green);font-size:12px;margin-left:5px}.age{font-size:11px;color:var(--muted);white-space:nowrap}.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0}.metric{background:#0b1321;border-radius:9px;padding:8px}.metric small{display:block;color:var(--muted);font-size:9px;text-transform:uppercase}.metric b{font-size:13px;display:block;margin-top:4px}.scoreline{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted)}.bar{height:5px;background:#263449;border-radius:10px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#f0bd5d,#2bd69a);border-radius:10px}.ca{font:10px ui-monospace,monospace;color:#aebbd0;overflow-wrap:anywhere;margin:10px 0}.tokenactions{display:flex;gap:7px}.tokenactions a,.tokenactions button{flex:1;text-align:center;text-decoration:none;border-radius:9px;padding:10px 7px;font-size:11px;font-weight:750}.open{background:#19365d;color:#c8ddff;border:1px solid #2b4d79}.copy{background:#123d35;color:#bfffe8;border:1px solid #1d735b}.empty{text-align:center;color:var(--muted);padding:28px 10px;font-size:13px}.notice{font-size:11px;line-height:1.5;color:var(--muted)}.warn{color:var(--yellow)}.foot{text-align:center;color:#65758d;font-size:10px;padding:16px 8px}.hidden{display:none!important}
+    @media(min-width:600px){body{padding-top:24px}.hero h1{font-size:30px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">PUMP <span>CALLOUT</span> HUNTER</div>
+    <div class="status"><i class="dot" id="dot"></i><span id="status">Povezivanje...</span></div>
+  </header>
+  <section class="hero">
+    <div class="eyebrow">SOLANA · EARLY LAUNCH RADAR</div>
+    <h1>Pronađi nove tokene.<br><span style="color:var(--green)">Analiziraj prije callouta.</span></h1>
+    <p>Uživo prati nova kreiranja na Pump.fun. V1 koristi besplatni feed kreiranja tokena; ne izvršava kupnje i ne šalje automatske calloutove.</p>
+  </section>
+  <section class="stats">
+    <div class="stat"><small>Pronađeno</small><strong id="count">0</strong></div>
+    <div class="stat"><small>Na ekranu</small><strong id="shown">0</strong></div>
+    <div class="stat"><small>Veza</small><strong id="uptime" style="font-size:15px">—</strong></div>
+  </section>
+  <section class="panel">
+    <div class="panelhead"><h2>FILTERI</h2><span class="hint">Lokalno filtriranje</span></div>
+    <div class="controls">
+      <div class="field"><label for="minAge">Min. starost (min)</label><input id="minAge" type="number" min="0" value="0"></div>
+      <div class="field"><label for="maxAge">Max. starost (min)</label><input id="maxAge" type="number" min="1" value="60"></div>
+      <div class="field"><label for="minSol">Min. virtual SOL u krivulji</label><input id="minSol" type="number" min="0" step="0.1" value="0"></div>
+      <div class="field"><label for="minScore">Min. launch score</label><input id="minScore" type="number" min="0" max="100" value="0"></div>
+    </div>
+    <div class="field search"><label for="search">Pretraži naziv, ticker ili CA</label><input id="search" placeholder="npr. DOGE ili adresa tokena"></div>
+    <div class="actions">
+      <button class="btn primary" id="apply">Primijeni filtere</button>
+      <button class="btn" id="pause">Pauziraj feed</button>
+      <button class="btn" id="clear">Očisti listu</button>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="panelhead"><h2>LIVE NEW TOKENS</h2><span class="hint" id="last">Čekam prvi događaj</span></div>
+    <div class="feed" id="feed"><div class="empty">Čekam nove Pump.fun tokene…<br>Ostavi ovu stranicu otvorenu dok skenira.</div></div>
+  </section>
+  <section class="panel">
+    <div class="panelhead"><h2>ŠTO ZNAČI SCORE?</h2></div>
+    <p class="notice">Launch Score (0–100) je samo preliminarna heuristika iz podataka koje šalje događaj kreiranja, poput početne kupnje i virtualnog SOL-a u bonding curveu. <b>Ne provjerava</b> holder distribuciju, dev wallet, stvarnu likvidnost, volumen kroz vrijeme, rug rizik ni sigurnost ugovora. Nije signal za kupnju ni službena Pump.fun ocjena.</p>
+    <p class="notice warn">Besplatni feed prikazuje nova kreiranja, ne kontinuirane kupnje/prodaje. Vrijednosti koje nedostaju prikazuju se kao N/A, a ne procjenjuju se.</p>
+  </section>
+  <div class="foot">PUMP CALLOUT HUNTER V1 · Bez wallet povezivanja · Bez trgovanja · Bez obećanja zarade</div>
+</div>
+<script>
+(() => {
+  const WS_URL = "wss://pumpportal.fun/api/data";
+  const MAX_ITEMS = 250;
+  let ws=null, paused=false, reconnectMs=1500, reconnectTimer=null, startedAt=Date.now(), total=0;
+  const items=new Map();
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const num=v=>Number.isFinite(Number(v))?Number(v):null;
+  const fmt=(v,d=2)=>v===null?"N/A":Number(v).toLocaleString("en-US",{maximumFractionDigits:d});
+  function ageMin(t){return Math.max(0,(Date.now()-t)/60000)}
+  function scoreOf(x){
+    // Transparent launch-only heuristic, not a market-quality or safety rating.
+    const buy=num(x.initialBuy), curve=num(x.vSolInBondingCurve), mc=num(x.marketCapSol);
+    let s=20;
+    if(buy!==null) s+=Math.min(30,Math.max(0,buy)*12);
+    if(curve!==null) s+=Math.min(30,Math.max(0,curve)*1.5);
+    if(mc!==null && mc>0) s+=10;
+    if(x.uri) s+=5;
+    return Math.max(0,Math.min(100,Math.round(s)));
+  }
+  function setStatus(t,on=false){$("status").textContent=t;$("dot").classList.toggle("on",on)}
+  function connect(){
+    if(paused)return;
+    clearTimeout(reconnectTimer);
+    setStatus("Povezivanje…");
+    try{ws=new WebSocket(WS_URL)}catch(e){scheduleReconnect();return}
+    ws.onopen=()=>{reconnectMs=1500;setStatus("LIVE · PumpPortal",true);ws.send(JSON.stringify({method:"subscribeNewToken"}));};
+    ws.onmessage=e=>{let d;try{d=JSON.parse(e.data)}catch{return}
+      if(d.txType==="create" && d.mint){addToken(d);return}
+      if(d.message && /error|limit|unauthor/i.test(d.message)) setStatus("Feed: "+d.message.slice(0,40),false);
+    };
+    ws.onerror=()=>setStatus("Greška veze");
+    ws.onclose=()=>{setStatus("Prekinuto · ponovno spajanje");scheduleReconnect()};
+  }
+  function scheduleReconnect(){if(paused)return;clearTimeout(reconnectTimer);reconnectTimer=setTimeout(connect,reconnectMs);reconnectMs=Math.min(30000,reconnectMs*2)}
+  function addToken(d){
+    if(items.has(d.mint))return;
+    const x={...d,_seen:Date.now(),_score:scoreOf(d)};
+    items.set(d.mint,x);total++;
+    while(items.size>MAX_ITEMS)items.delete(items.keys().next().value);
+    $("count").textContent=total.toLocaleString();$("last").textContent="Zadnji: "+new Date().toLocaleTimeString("hr-HR");
+    render();
+  }
+  function render(){
+    const minA=Math.max(0,num($("minAge").value)||0), maxA=Math.max(minA,num($("maxAge").value)||60);
+    const minS=Math.max(0,num($("minSol").value)||0), minSc=Math.max(0,num($("minScore").value)||0);
+    const q=$("search").value.trim().toLowerCase();
+    const rows=[...items.values()].filter(x=>{
+      const a=ageMin(x._seen), sol=num(x.vSolInBondingCurve);
+      return a>=minA&&a<=maxA&&(sol===null?minS===0:sol>=minS)&&x._score>=minSc&&(!q||[x.name,x.symbol,x.mint].some(v=>String(v||"").toLowerCase().includes(q)));
+    }).sort((a,b)=>b._score-a._score);
+    $("shown").textContent=rows.length;
+    if(!rows.length){$("feed").innerHTML='<div class="empty">Nema tokena koji odgovaraju filterima.<br>Pričekaj nove launchove ili olabavi filtere.</div>';return}
+    $("feed").innerHTML=rows.map(x=>{
+      const mint=esc(x.mint), name=esc(x.name||"Unknown token"), sym=esc(x.symbol||"—");
+      const age=ageMin(x._seen), sc=x._score;
+      return `<article class="token">
+        <div class="tokenhead"><div><span class="tokenname">${name}</span><span class="symbol">$${sym}</span></div><span class="age">${fmt(age,1)} min</span></div>
+        <div class="meta">
+          <div class="metric"><small>Initial buy</small><b>${fmt(num(x.initialBuy))} SOL</b></div>
+          <div class="metric"><small>Virtual SOL</small><b>${fmt(num(x.vSolInBondingCurve))} SOL</b></div>
+          <div class="metric"><small>Market cap</small><b>${fmt(num(x.marketCapSol))} SOL</b></div>
+        </div>
+        <div class="scoreline"><span>Launch score · heuristika</span><b style="color:${sc>=70?'var(--green)':sc>=45?'var(--yellow)':'var(--muted)'}">${sc}/100</b></div>
+        <div class="bar"><i style="width:${sc}%"></i></div>
+        <div class="ca">${mint}</div>
+        <div class="tokenactions"><a class="open" href="https://pump.fun/coin/${encodeURIComponent(x.mint)}" target="_blank" rel="noopener">Otvori Pump.fun ↗</a><button class="copy" data-copy="${mint}">Kopiraj CA</button></div>
+      </article>`;
+    }).join("");
+  }
+  $("feed").addEventListener("click",async e=>{const b=e.target.closest("[data-copy]");if(!b)return;try{await navigator.clipboard.writeText(b.dataset.copy);b.textContent="Kopirano ✓";setTimeout(()=>b.textContent="Kopiraj CA",1300)}catch{prompt("Kopiraj CA:",b.dataset.copy)}});
+  $("apply").onclick=render;$("search").oninput=render;
+  $("pause").onclick=()=>{paused=!paused;if(paused){clearTimeout(reconnectTimer);if(ws)ws.close();$("pause").textContent="Pokreni feed";setStatus("Pauzirano")}else{$("pause").textContent="Pauziraj feed";connect()}};
+  $("clear").onclick=()=>{items.clear();total=0;$("count").textContent="0";render()};
+  setInterval(()=>{$("uptime").textContent=Math.floor((Date.now()-startedAt)/60000)+" min";render()},15000);
+  if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  connect();
+})();
+</script>
+</body>
+</html>
