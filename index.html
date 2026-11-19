@@ -26,7 +26,7 @@
   <section class="hero">
     <div class="eyebrow">SOLANA · EARLY LAUNCH RADAR</div>
     <h1>Pronađi nove tokene.<br><span style="color:var(--green)">Analiziraj prije callouta.</span></h1>
-    <p>Uživo prati nova kreiranja na Pump.fun. V1 koristi besplatni feed kreiranja tokena; ne izvršava kupnje i ne šalje automatske calloutove.</p>
+    <p>Prati nova kreiranja i ograničeni uzorak stvarnih BUY/SELL transakcija za prvih 5 tokena. Ne izvršava kupnje i ne šalje automatske calloutove.</p>
   </section>
   <section class="stats">
     <div class="stat"><small>Pronađeno</small><strong id="count">0</strong></div>
@@ -53,89 +53,103 @@
     <div class="feed" id="feed"><div class="empty">Čekam nove Pump.fun tokene…<br>Ostavi ovu stranicu otvorenu dok skenira.</div></div>
   </section>
   <section class="panel">
+    <div class="panelhead"><h2>TRADE CONFIRMATION · 60 SEK</h2><span class="hint" id="tradeStatus">Trade feed: povezivanje…</span></div>
+    <p class="notice">Za najviše 5 tokena istodobno pratimo stvarne transakcije. Prikaz je uzorak aktivnosti, ne prognoza cijene ni sigurnosna provjera.</p>
+    <div class="feed" id="signals"><div class="empty">Čekam prve BUY/SELL događaje…</div></div>
+  </section>
+  <section class="panel">
     <div class="panelhead"><h2>ŠTO ZNAČI POTPUNOST PODATAKA?</h2></div>
     <p class="notice">Ocjena potpunosti podataka (0–100) pokazuje samo koliko osnovnih polja događaja kreiranja je dostupno: mint, naziv/ticker, metadata URI i virtualni SOL u bonding curveu. <b>To nije ocjena kvalitete tokena</b>, ne predviđa rast i nije signal za kupnju.</p>
-    <p class="notice warn">INITIAL BUY prikazuje količinu kupljenih tokena, a ne SOL. Virtual SOL i market cap prikazuju se zasebno. Besplatni feed prikazuje nova kreiranja, ne kontinuirane kupnje/prodaje. Nedostupna polja prikazuju se kao N/A.</p>
+    <p class="notice warn">INITIAL BUY prikazuje količinu kupljenih tokena, a ne SOL. Virtual SOL i market cap prikazuju se zasebno. Trade feed koristi odvojeni javni servis s ograničenim besplatnim kvotama. Ako kvota ili servis nisu dostupni, aplikacija ne smije tretirati nedostatak transakcija kao nulu ili negativan signal. Nedostupna polja prikazuju se kao N/A.</p>
   </section>
-  <div class="foot">PUMP CALLOUT HUNTER V1 · Bez wallet povezivanja · Bez trgovanja · Bez obećanja zarade</div>
+  <div class="foot">PUMP CALLOUT HUNTER V3 · Bez wallet povezivanja · Bez trgovanja · Bez obećanja zarade</div>
 </div>
 <script>
 (() => {
-  const WS_URL = "wss://pumpportal.fun/api/data";
-  const MAX_ITEMS = 250;
-  let ws=null, paused=false, reconnectMs=1500, reconnectTimer=null, startedAt=Date.now(), total=0;
-  const items=new Map();
+  const WS_URL = "wss://pumpdev.io/ws";
+  const MAX_ITEMS=100, MAX_TRACK=5, WINDOW_MS=60000, TRACK_MS=120000;
+  let ws=null, paused=false, reconnectMs=2000, reconnectTimer=null, startedAt=Date.now(), total=0;
+  const items=new Map(), tracking=new Map(), queue=[];
   const $=id=>document.getElementById(id);
   const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const num=v=>Number.isFinite(Number(v))?Number(v):null;
+  const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
   const fmt=(v,d=2)=>v===null?"N/A":Number(v).toLocaleString("en-US",{maximumFractionDigits:d});
-  function ageMin(t){return Math.max(0,(Date.now()-t)/60000)}
-  function scoreOf(x){
-    // Data-completeness indicator only; deliberately not a token-quality score.
-    let s=0;
-    if(typeof x.mint==='string' && x.mint.length>20) s+=25;
-    if(typeof x.name==='string' && x.name.trim() && typeof x.symbol==='string' && x.symbol.trim()) s+=25;
-    if(typeof x.uri==='string' && x.uri.startsWith('http')) s+=25;
-    if(num(x.vSolInBondingCurve)!==null) s+=25;
-    return s;
-  }
-  function fmtTokens(v){return v===null?'N/A':Number(v).toLocaleString('en-US',{maximumFractionDigits:0})+' tokens'}
+  const ageMin=t=>Math.max(0,(Date.now()-t)/60000);
   function setStatus(t,on=false){$("status").textContent=t;$("dot").classList.toggle("on",on)}
+  function completeness(x){let s=0;if(x.mint)s+=25;if(x.name&&x.symbol)s+=25;if(x.uri?.startsWith("http"))s+=25;if(num(x.vSolInBondingCurve)!==null)s+=25;return s}
+  function send(obj){if(ws?.readyState===WebSocket.OPEN)ws.send(JSON.stringify(obj))}
   function connect(){
-    if(paused)return;
-    clearTimeout(reconnectTimer);
-    setStatus("Povezivanje…");
-    try{ws=new WebSocket(WS_URL)}catch(e){scheduleReconnect();return}
-    ws.onopen=()=>{reconnectMs=1500;setStatus("LIVE · PumpPortal",true);ws.send(JSON.stringify({method:"subscribeNewToken"}));};
+    if(paused)return; clearTimeout(reconnectTimer); setStatus("Povezivanje…");
+    try{ws=new WebSocket(WS_URL)}catch(e){schedule();return}
+    ws.onopen=()=>{reconnectMs=2000;setStatus("LIVE · PumpDev",true);$("tradeStatus").textContent="Trade feed aktivan";send({method:"subscribeNewToken"});};
     ws.onmessage=e=>{let d;try{d=JSON.parse(e.data)}catch{return}
-      if(d.txType==="create" && d.mint){addToken(d);return}
-      if(d.message && /error|limit|unauthor/i.test(d.message)) setStatus("Feed: "+d.message.slice(0,40),false);
+      if(d.txType==="create"&&d.mint){addToken(d);return}
+      if(["buy","sell"].includes(d.txType)&&d.mint){recordTrade(d);return}
+      if(d.type==="error"||d.message){$("tradeStatus").textContent=(d.message||d.code||"Feed ograničen").slice(0,70);}
     };
-    ws.onerror=()=>setStatus("Greška veze");
-    ws.onclose=()=>{setStatus("Prekinuto · ponovno spajanje");scheduleReconnect()};
+    ws.onerror=()=>{setStatus("Greška veze");$("tradeStatus").textContent="Veza s trade feedom nije potvrđena"};
+    ws.onclose=()=>{setStatus("Prekinuto · ponovno spajanje");$("tradeStatus").textContent="Ponovno povezivanje…";schedule()};
   }
-  function scheduleReconnect(){if(paused)return;clearTimeout(reconnectTimer);reconnectTimer=setTimeout(connect,reconnectMs);reconnectMs=Math.min(30000,reconnectMs*2)}
+  function schedule(){if(paused)return;clearTimeout(reconnectTimer);reconnectTimer=setTimeout(connect,reconnectMs);reconnectMs=Math.min(30000,reconnectMs*2)}
   function addToken(d){
     if(items.has(d.mint))return;
-    const x={...d,_seen:Date.now(),_score:scoreOf(d)};
-    items.set(d.mint,x);total++;
-    while(items.size>MAX_ITEMS)items.delete(items.keys().next().value);
+    const x={...d,_seen:Date.now(),_score:completeness(d),trades:[]};
+    items.set(d.mint,x);total++;while(items.size>MAX_ITEMS)items.delete(items.keys().next().value);
     $("count").textContent=total.toLocaleString();$("last").textContent="Zadnji: "+new Date().toLocaleTimeString("hr-HR");
-    render();
+    queue.push(d.mint);pumpQueue();render();
+  }
+  function pumpQueue(){
+    if(paused||ws?.readyState!==WebSocket.OPEN)return;
+    while(tracking.size<MAX_TRACK&&queue.length){
+      const mint=queue.shift();if(tracking.has(mint))continue;
+      const x=items.get(mint);if(!x)continue;
+      tracking.set(mint,{until:Date.now()+TRACK_MS});send({method:"subscribeTokenTrade",keys:[mint]});
+    }
+  }
+  function recordTrade(d){
+    const x=items.get(d.mint), t=tracking.get(d.mint);if(!x||!t)return;
+    const isBuy=d.txType==="buy", sol=num(d.solAmount), trader=d.traderPublicKey||d.user||"";
+    x.trades.push({at:Date.now(),buy:isBuy,sol:sol??0,trader});
+    x.trades=x.trades.filter(z=>Date.now()-z.at<=WINDOW_MS);
+    renderSignals();
+  }
+  function stats(x){
+    const ts=x.trades.filter(z=>Date.now()-z.at<=WINDOW_MS), buys=ts.filter(t=>t.buy), sells=ts.filter(t=>!t.buy);
+    const uniq=new Set(buys.map(t=>t.trader).filter(Boolean)).size;
+    const buySol=buys.reduce((a,t)=>a+t.sol,0), sellSol=sells.reduce((a,t)=>a+t.sol,0);
+    return {n:ts.length,buys:buys.length,sells:sells.length,uniq,buySol,sellSol,net:buySol-sellSol,ratio:ts.length?buys.length/ts.length:0};
+  }
+  function label(s){
+    if(s.n<8||s.uniq<5)return ["UZORAK PREMALEN","var(--yellow)"];
+    if(s.net<=0||s.ratio<.55)return ["PRODAJNI PRITISAK","var(--red)"];
+    if(s.uniq>=5&&s.ratio>=.65&&s.net>=0.5)return ["BUY AKTIVNOST POTVRĐENA","var(--green)"];
+    return ["PRATITI · BEZ POTVRDE","var(--yellow)"];
+  }
+  function renderSignals(){
+    const arr=[...items.values()].filter(x=>x.trades.length).sort((a,b)=>stats(b).net-stats(a).net).slice(0,10);
+    $("signals").innerHTML=arr.length?arr.map(x=>{
+      const s=stats(x), [lab,color]=label(s);
+      return `<article class="token"><div class="tokenhead"><div><span class="tokenname">${esc(x.name||"Unknown")}</span><span class="symbol">$${esc(x.symbol||"—")}</span></div><b style="color:${color};font-size:10px">${lab}</b></div>
+      <div class="meta"><div class="metric"><small>BUY / SELL</small><b>${s.buys} / ${s.sells}</b></div><div class="metric"><small>Jedinstveni kupci</small><b>${s.uniq}</b></div><div class="metric"><small>Neto SOL · 60s</small><b>${fmt(s.net,3)}</b></div></div>
+      <div class="notice">Ukupno ${s.n} transakcija · BUY udio ${fmt(s.ratio*100,0)}% · uzorak zadnjih 60 sekundi</div></article>`;
+    }).join(""):'<div class="empty">Još nema BUY/SELL događaja za praćene tokene.</div>';
   }
   function render(){
-    const minA=Math.max(0,num($("minAge").value)||0), maxA=Math.max(minA,num($("maxAge").value)||60);
-    const minS=Math.max(0,num($("minSol").value)||0), minSc=Math.max(0,num($("minScore").value)||0);
-    const q=$("search").value.trim().toLowerCase();
-    const rows=[...items.values()].filter(x=>{
-      const a=ageMin(x._seen), sol=num(x.vSolInBondingCurve);
-      return a>=minA&&a<=maxA&&(sol===null?minS===0:sol>=minS)&&x._score>=minSc&&(!q||[x.name,x.symbol,x.mint].some(v=>String(v||"").toLowerCase().includes(q)));
-    }).sort((a,b)=>b._score-a._score);
+    const minA=Math.max(0,num($("minAge").value)||0),maxA=Math.max(minA,num($("maxAge").value)||60),minS=Math.max(0,num($("minSol").value)||0),minSc=Math.max(0,num($("minScore").value)||0),q=$("search").value.trim().toLowerCase();
+    const rows=[...items.values()].filter(x=>{const a=ageMin(x._seen),sol=num(x.vSolInBondingCurve);return a>=minA&&a<=maxA&&(sol===null?minS===0:sol>=minS)&&x._score>=minSc&&(!q||[x.name,x.symbol,x.mint].some(v=>String(v||"").toLowerCase().includes(q)))}).sort((a,b)=>b._seen-a._seen);
     $("shown").textContent=rows.length;
-    if(!rows.length){$("feed").innerHTML='<div class="empty">Nema tokena koji odgovaraju filterima.<br>Pričekaj nove launchove ili olabavi filtere.</div>';return}
-    $("feed").innerHTML=rows.map(x=>{
-      const mint=esc(x.mint), name=esc(x.name||"Unknown token"), sym=esc(x.symbol||"—");
-      const age=ageMin(x._seen), sc=x._score;
-      return `<article class="token">
-        <div class="tokenhead"><div><span class="tokenname">${name}</span><span class="symbol">$${sym}</span></div><span class="age">${fmt(age,1)} min</span></div>
-        <div class="meta">
-          <div class="metric"><small>Initial buy · tokeni</small><b>${fmtTokens(num(x.initialBuy))}</b></div>
-          <div class="metric"><small>Virtual SOL</small><b>${fmt(num(x.vSolInBondingCurve))} SOL</b></div>
-          <div class="metric"><small>Market cap</small><b>${fmt(num(x.marketCapSol))} SOL</b></div>
-        </div>
-        <div class="scoreline"><span>Potpunost podataka · nije kvaliteta tokena</span><b style="color:${sc>=70?'var(--green)':sc>=45?'var(--yellow)':'var(--muted)'}">${sc}/100</b></div>
-        <div class="bar"><i style="width:${sc}%"></i></div>
-        <div class="ca">${mint}</div>
-        <div class="tokenactions"><a class="open" href="https://pump.fun/coin/${encodeURIComponent(x.mint)}" target="_blank" rel="noopener">Otvori Pump.fun ↗</a><button class="copy" data-copy="${mint}">Kopiraj CA</button></div>
-      </article>`;
-    }).join("");
+    $("feed").innerHTML=rows.length?rows.map(x=>`<article class="token"><div class="tokenhead"><div><span class="tokenname">${esc(x.name||"Unknown token")}</span><span class="symbol">$${esc(x.symbol||"—")}</span></div><span class="age">${fmt(ageMin(x._seen),1)} min</span></div>
+      <div class="meta"><div class="metric"><small>Initial buy · tokeni</small><b>${x.initialBuy==null?"N/A":fmt(num(x.initialBuy),0)+" tokens"}</b></div><div class="metric"><small>Virtual SOL</small><b>${fmt(num(x.vSolInBondingCurve))} SOL</b></div><div class="metric"><small>Market cap</small><b>${fmt(num(x.marketCapSol))} SOL</b></div></div>
+      <div class="scoreline"><span>Potpunost podataka · nije kvaliteta</span><b>${x._score}/100</b></div><div class="ca">${esc(x.mint)}</div>
+      <div class="tokenactions"><a class="open" href="https://pump.fun/coin/${encodeURIComponent(x.mint)}" target="_blank" rel="noopener">Otvori Pump.fun ↗</a><button class="copy" data-copy="${esc(x.mint)}">Kopiraj CA</button></div></article>`).join(""):'<div class="empty">Nema tokena koji odgovaraju filterima.</div>';
+    renderSignals();
   }
-  $("feed").addEventListener("click",async e=>{const b=e.target.closest("[data-copy]");if(!b)return;try{await navigator.clipboard.writeText(b.dataset.copy);b.textContent="Kopirano ✓";setTimeout(()=>b.textContent="Kopiraj CA",1300)}catch{prompt("Kopiraj CA:",b.dataset.copy)}});
+  $("feed").addEventListener("click",async e=>{const b=e.target.closest("[data-copy]");if(!b)return;try{await navigator.clipboard.writeText(b.dataset.copy);b.textContent="Kopirano ✓"}catch{prompt("Kopiraj CA:",b.dataset.copy)}});
   $("apply").onclick=render;$("search").oninput=render;
-  $("pause").onclick=()=>{paused=!paused;if(paused){clearTimeout(reconnectTimer);if(ws)ws.close();$("pause").textContent="Pokreni feed";setStatus("Pauzirano")}else{$("pause").textContent="Pauziraj feed";connect()}};
-  $("clear").onclick=()=>{items.clear();total=0;$("count").textContent="0";render()};
-  setInterval(()=>{$("uptime").textContent=Math.floor((Date.now()-startedAt)/60000)+" min";render()},15000);
-  if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  $("pause").onclick=()=>{paused=!paused;if(paused){clearTimeout(reconnectTimer);if(ws){for(const mint of tracking.keys())send({method:"unsubscribeTokenTrade",keys:[mint]});send({method:"unsubscribeNewToken"});ws.close()}tracking.clear();$("pause").textContent="Pokreni feed";setStatus("Pauzirano")}else{$("pause").textContent="Pauziraj feed";connect()}};
+  $("clear").onclick=()=>{items.clear();queue.length=0;total=0;$("count").textContent="0";render()};
+  setInterval(()=>{const now=Date.now();for(const [mint,t] of tracking){if(now>=t.until){send({method:"unsubscribeTokenTrade",keys:[mint]});tracking.delete(mint)}}pumpQueue();$("uptime").textContent=Math.floor((Date.now()-startedAt)/60000)+" min";render()},5000);
+  if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
   connect();
 })();
 </script>

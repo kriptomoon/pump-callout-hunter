@@ -1,24 +1,17 @@
-PUMP CALLOUT HUNTER V1 — iPhone PWA
+PUMP CALLOUT HUNTER V3 — PWA
 
-Sadržaj:
-- index.html: aplikacija
-- manifest.webmanifest: instalacija kao web aplikacija
-- sw.js: osnovni offline cache za sučelje
-- icon-192.png / icon-512.png: ikone
+V3 dodaje ograničeni live BUY/SELL uzorak za najviše 5 tokena istodobno preko PumpDev WebSocket API-ja (wss://pumpdev.io/ws). Novi tokeni se otkrivaju besplatnim subscribeNewToken; aplikacija zatim redom prati svaki token do 2 minute, u okviru anonimne kvote servisa.
 
-VAŽNO:
-1) Ovo je V1 prototip · ispravak prikaza i ocjene podataka. Koristi PumpPortal WebSocket subscribeNewToken.
-2) Feed novih tokena je besplatan prema PumpPortal dokumentaciji. Trade stream nije uključen jer može zahtijevati API ključ, financirani wallet i naplatu.
-3) Ocjena potpunosti podataka (0–100) mjeri samo prisutnost osnovnih polja događaja kreiranja; nije ocjena kvalitete tokena niti signal za kupnju. INITIAL BUY je količina tokena, ne SOL.
-4) Nema wallet povezivanja, privatnih ključeva, kupnje/prodaje ni automatskog objavljivanja.
-5) WebSocket radi samo dok je stranica otvorena i mreža dostupna. iOS može pauzirati pozadinske kartice.
-6) Za instalaciju na iPhone datoteke moraju biti hostane preko HTTPS-a. Najjednostavnije je GitHub Pages:
-   - Napravi GitHub repozitorij (npr. pump-callout-hunter).
-   - Uploadaj SVE datoteke iz ovog ZIP-a u root repozitorija.
-   - Settings > Pages > Deploy from a branch > main > /(root) > Save.
-   - Otvori generirani HTTPS URL u Safariju.
-   - Share > Add to Home Screen > Add.
-7) Ako se feed ne spoji, provjeri status i da li mreža blokira WebSocket. Neki javni servisi mogu mijenjati uvjete ili ograničenja.
+VAŽNA OGRANIČENJA:
+- Prema trenutno objavljenoj PumpDev dokumentaciji, anonimni pristup bez ključa ima najviše 5 aktivnih token/account pretplata i 1.000 trade poruka mjesečno. Besplatni račun/key ima više, ali V3 ne traži račun niti wallet.
+- Ako kvota bude potrošena ili servis promijeni uvjete, trade podaci mogu prestati stizati. Odsutnost podataka NIJE dokaz da nema kupnji/prodaja.
+- Signal BUY AKTIVNOST POTVRĐENA samo znači da je u kratkom prozoru zabilježen minimalni uzorak: najmanje 8 transakcija, 5 jedinstvenih kupaca, BUY udio >=65% i neto priljev >=0.5 SOL. To nije preporuka, predviđanje cijene ni sigurnosna provjera. Može zakasniti, biti izmanipulirano i token i dalje može pasti na nulu.
+- Podaci su samo live; nema povijesne provjere ni garancije uspješnog callouta.
+- Nema wallet povezivanja, privatnih ključeva, kupnje/prodaje ili automatskog objavljivanja.
+- Feed radi samo dok je stranica otvorena; iOS može pauzirati pozadinske kartice.
 
-Službeni izvor feeda:
-https://pumpportal.fun/data-api/real-time/
+OBJAVA:
+Uploadaj/overwrite sve datoteke iz ovog ZIP-a u root GitHub repozitorija. Commit promjene. GitHub Pages će se automatski ponovno objaviti. Nakon objave napravi hard refresh (Ctrl+Shift+R) ili obriši site data ako je potrebno.
+
+Izvori:
+https://pumpdev.io/data-api
